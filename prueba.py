@@ -43,21 +43,8 @@ import matplotlib.pyplot as plt
 
 # ----------------------------------------------------------------------------------
 
-# data = web.DataReader('GLD', data_source='yahoo',start='2010-01-01', end='2016-12-31')
-# print data.head()
+import mmtm_strt_GoogFinance.Momentu
 
+a = Momentum_Strat('AAPL', '2010-1-1', '2016-10-31')
 
-data = web.DataReader('SPY',data_source='google',start='2010-01-01', end='2016-12-31')#['Close']
-data['retuns_1'] =  np.log(data['Close']/data['Close'].shift(1))
-data['retuns_2'] =  data['Close']-data['Close'].shift(1)
-
-# print data.head()
-# cols = ['retuns_1','retuns_2']
-# data['retuns_1'].plot()
-# plt.title('porcentaje')
-# data.retuns_2.hist(bins=30) # mostramos el histograma de los retornos en %
-plt.show()
-# data['retuns_2'].plot()
-# plt.title('en cash')
-# plt.show()
-# print data.head()
+print a.momentum_strategy()
