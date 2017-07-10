@@ -98,6 +98,7 @@ class Momentum_Strat(object):
         self.results[['creturns', 'cstrategy']].plot(title=title, figsize=(10, 6))
         plt.show()
 
+
 if __name__ == '__main__':
     mm = Momentum_Strat('AAPL', '2010-1-1', '2016-10-31')
     # print mm.run_strategy()
