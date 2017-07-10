@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pandas_datareader import data as web
 
 
-class momentum_strat(object):
+# class momentum_strat(object):
 
 def momentum(activo=None ,start=None, end=None, data_src='google'):
 

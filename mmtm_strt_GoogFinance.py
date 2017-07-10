@@ -10,7 +10,7 @@ class Momentum_Strat(object):
 
     def __init__(self, activo=None, start=None, end=None, data_src='google'):
 
-        self.name = activo
+        self.symbol = activo
         self.start = start
         self.end = end
         # price = OHLC
@@ -20,10 +20,10 @@ class Momentum_Strat(object):
 
     def get_data(self):
 
-        data  = web.DataReader(name=self.name, data_source=self.data_source, start=self.start, end=self.end)#[price]
+        data  = web.DataReader(name=self.symbol, data_source=self.data_source, start=self.start, end=self.end)#[price]
         self.asset = data
 
-    def momentum_strategy(self, momentum = 1):
+    def run_strategy(self, momentum = 1):
 
         # self.str_rtrn = ['returns']
         # self.drawdown = []
@@ -32,8 +32,11 @@ class Momentum_Strat(object):
         self.cumrent = []
         asset = self.asset.copy()
 
+
+        # Asset Returns
         asset['returns'] = np.log(asset['Close']/asset['Close'].shift(1))
 
+        # Position
         asset['position'] = np.sign(asset['returns'].rolling(momentum).mean())
         asset['strategy'] = asset['position'].shift(1) * asset['returns']
 
@@ -75,23 +78,28 @@ class Momentum_Strat(object):
 
     def strat_drawdown(self):
 
-        results = self.momentum_strategy()
+        self.results = self.run_strategy()
 
-        # if self.results is None:
-        #     print("Not results to plot yet. Run a strategy.! ")
+        if self.results is None:
+            print("Not results to plot yet. Run a strategy.!")
         #
         # else:
-        print results['Close'] #, round(self.results['ddstrategy'].max(),5)
+        return self.results['ddstrategy'].max()
 
 
     def plot_strategy(self):
+
+        self.results = self.run_strategy()
+
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
 
         title = '%s ' % (self.symbol)
         self.results[['creturns', 'cstrategy']].plot(title=title, figsize=(10, 6))
+        plt.show()
 
 if __name__ == '__main__':
-    mombt = Momentum_Strat('AAPL', '2010-1-1', '2016-10-31')
-    # print mombt.momentum_strategy()
-    print mombt.strat_drawdown()
+    mm = Momentum_Strat('AAPL', '2010-1-1', '2016-10-31')
+    # print mm.run_strategy()
+    print mm.strat_drawdown()
+    # print mm.plot_strategy()
