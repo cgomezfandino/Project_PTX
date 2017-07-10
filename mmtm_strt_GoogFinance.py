@@ -50,6 +50,8 @@ class Momentum_Strat(object):
 
         self.results = asset
 
+        return asset
+
         # for m in momentum:
         #     asset['position_%d' % m] = np.sign(asset['returns'].rolling(m).mean())
         #     asset['strategy_%d' % m] = asset['position_%d' % m].shift(1) * asset['returns']
@@ -64,18 +66,22 @@ class Momentum_Strat(object):
         #     self.drawdown.append('drawdown_%s' % dd)
         #     self.cumrent.append('cumret_%s' % dd)
 
-        return {'Strategy Drawdown':np.round(self.results['ddstrategy'].max(),3),
-                'Hold Drawdown':np.round(self.results['ddreturns'].max(),3)}
+        # return {'Strategy Yield:':self.results['strategy'].sum(),
+        #         'Buy and Hold Yield:':self.results['returns'].sum(),
+        #         'Strategy Drawdown':np.round(self.results['ddstrategy'].max(),3),
+        #         'Hold Drawdown':np.round(self.results['ddreturns'].max(),3)}
 
 
 
-    # def strat_drawdown(self):
-    #
-    #     if self.results is None:
-    #         print("Not results to plot yet. Run a strategy.! ")
-    #
-    #     else:
-    #         print self.results['Close'].max() #, round(self.results['ddstrategy'].max(),5)
+    def strat_drawdown(self):
+
+        results = self.momentum_strategy()
+
+        # if self.results is None:
+        #     print("Not results to plot yet. Run a strategy.! ")
+        #
+        # else:
+        print results['Close'] #, round(self.results['ddstrategy'].max(),5)
 
 
     def plot_strategy(self):
@@ -87,5 +93,5 @@ class Momentum_Strat(object):
 
 if __name__ == '__main__':
     mombt = Momentum_Strat('AAPL', '2010-1-1', '2016-10-31')
-    print mombt.momentum_strategy()
-    # print mombt.strat_drawdown()
+    # print mombt.momentum_strategy()
+    print mombt.strat_drawdown()
