@@ -27,6 +27,7 @@ fromTime = fromTime.isoformat('T') + suffix
 toTime = dt.datetime(2016, 12, 10, 8, 0, 0)
 toTime = toTime.isoformat('T') + suffix
 
+
 res = ctx.instrument.candles(
     instrument='EUR_USD',
     fromTime=fromTime,
