@@ -204,56 +204,6 @@ class Momentum_Backtester(object):
 
         return np.round(aperf_c,2), round(aperf_p,2), round(operf_c,2), round(operf_p,3), mdd_c, mdd_p
 
-
-
-
-
-        # return asset['strategy'][trades]
-        # return {'Momentum Strategy - %s'%self.symbol:{'Results':{'strategy':{'Returns':np.round(asset['cstrategy'].sum(),3),
-        #                                                                      'Anual_Return':asset['cstrategy'].mean() * 252,
-        #                                                                      'Anual_Desv': asset['cstrategy'].std() * 252 ** 0.5,
-        #                                                                      'Drawdown':asset['ddstrategy'].max(),
-        #                                                                      'Sharpe_Ratio':''},
-        #                                                          'Buy and Hold':{'Returns':asset['creturns'].sum(),
-        #                                                                      'Anual_Return':asset['creturns'].mean() * 252,
-        #                                                                      'Anual_Desv': asset['creturns'].std() * 252 ** 0.5,
-        #                                                                      'Drawdown':asset['ddreturns'].max(),
-        #                                                                      'Sharpe_Ratio':''}}}}
-
-        #return(asset)
-
-        # for m in momentum:
-        #     asset['position_%d' % m] = np.sign(asset['returns'].rolling(m).mean())
-        #     asset['strategy_%d' % m] = asset['position_%d' % m].shift(1) * asset['returns']
-        #     self.str_rtrn.append('strategy_%d' % m) #mirar si se lleva al self o no?
-
-        # cumulative returns and max(cumulative return)
-        # for dd in str_rtrn:
-        #     # print dd
-        #     asset['cumret_%s' % dd] = asset[dd].cumsum().apply(np.exp)
-        #     asset['cummax_%s' % dd] = asset['cumret_%s' % dd].cummax()
-        #     asset['drawdown_%s' % dd] = asset['cummax_%s' % dd] - activo['cumret_%s' % dd]
-        #     self.drawdown.append('drawdown_%s' % dd)
-        #     self.cumrent.append('cumret_%s' % dd)
-
-        # return {'Strategy Yield:':self.results['strategy'].sum(),
-        #         'Buy and Hold Yield:':self.results['returns'].sum(),
-        #         'Strategy Drawdown':np.round(self.results['ddstrategy'].max(),3),
-        #         'Hold Drawdown':np.round(self.results['ddreturns'].max(),3)}
-
-
-
-    # def strat_drawdown(self):
-    #
-    #     self.results = self.run_strategy()
-    #
-    #     if self.results is None:
-    #         print("Not results to plot yet. Run a strategy.!")
-    #     #
-    #     # else:
-    #     return(self.results['ddstrategy_c'].max())
-
-
     def plot_strategy(self):
 
         #self.results = self.run_strategy()
