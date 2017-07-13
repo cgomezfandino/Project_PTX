@@ -7,12 +7,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 # Create an object config
 config = ConfigParser()
 # Read the config
 config.read("pyalgo.cfg")
-
 
 class Momentum_Backtester(object):
 
@@ -43,21 +41,25 @@ class Momentum_Backtester(object):
     plot_strategy:
         plots the performance of the strategy compared to the symbol
     '''
-    def __init__(self, symbol, start, end, amount=10000, tc=0.001, sufix = '.000000000Z', timeFrame = 'H4', price = 'A'):
+    def __init__(self, symbol, start, end, amount = 10000, tc = 0.000, sufix = '.000000000Z', timeFrame = 'H4', price = 'A'):
 
-        self.suffix = sufix
-        self.price = price
+
         self.symbol = symbol # EUR_USD
-        self.timeFrame = timeFrame
-        self.fromTime = dt.datetime.combine(pd.to_datetime(start), dt.time(9,00))
-        self.toTime = dt.datetime.combine(pd.to_datetime(end), dt.time(16,00))
+        # self.start = start
+        # self.end = end
         self.amount = amount
         self.tc = tc
-        self.get_data()
-        self.results = None
+        self.suffix = sufix
+        self.timeFrame = timeFrame
+        self.price = price
+        self.start = dt.datetime.combine(pd.to_datetime(start), dt.time(9,00))
+        self.end = dt.datetime.combine(pd.to_datetime(end), dt.time(16,00))
         # This string suffix is needed to conform to the Oanda API requirements regarding start and end times.
-        # self.fromTime = self.start.isoformat('T') + self.suffix
-        # self.toTime = self.end.isoformat('T') + self.suffix
+        self.fromTime = self.start.isoformat('T') + self.suffix
+        self.toTime = self.end.isoformat('T') + self.suffix
+        self.results = None
+
+
         self.ctx = v20.Context(
             'api-fxpractice.oanda.com',
             443,
@@ -65,6 +67,7 @@ class Momentum_Backtester(object):
             application='sample_code',
             token=config['oanda_v20']['access_token'],
             datetime_format='RFC3339')
+        self.get_data()
 
     def get_data(self):
 
@@ -236,23 +239,23 @@ class Momentum_Backtester(object):
     #     # else:
     #     return(self.results['ddstrategy_c'].max())
 
-    #
-    # def plot_strategy(self):
-    #
-    #     #self.results = self.run_strategy()
-    #
-    #     if self.results is None:
-    #         print('No results to plot yet. Run a strategy.')
-    #
-    #     title = 'Momentum Backtesting - %s ' % (self.symbol)
-    #     self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
-    #     self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
-    #     plt.show()
+
+    def plot_strategy(self):
+
+        #self.results = self.run_strategy()
+
+        if self.results is None:
+            print('No results to plot yet. Run a strategy.')
+
+        title = 'Momentum Backtesting - %s ' % (self.symbol)
+        self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
+        # self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
+        plt.show()
 
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('EUR_USD', '2010-01-01', '2016-10-31')
+    mombt = Momentum_Backtester('EUR_USD', start='2010-01-01', end='2015-01-01')
     print(mombt.run_strategy())
     # print(mombt.strat_drawdown())
-    # print(mombt.plot_strategy())
+    print(mombt.plot_strategy())
 
