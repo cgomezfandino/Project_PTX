@@ -6,6 +6,7 @@ from configparser import ConfigParser
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn
 
 # Create an object config
 config = ConfigParser()
@@ -18,7 +19,7 @@ class Momentum_Backtester(object):
     Attributes
     ==========
     symbol: str
-        Google Finance symbol with which to work with
+        Oanda symbol with which to work with
     start: str
         start date for data retrieval
     end: str
@@ -42,6 +43,19 @@ class Momentum_Backtester(object):
         plots the performance of the strategy compared to the symbol
     '''
     def __init__(self, symbol, start, end, amount = 10000, tc = 0.000, sufix = '.000000000Z', timeFrame = 'H4', price = 'A'):
+
+        '''
+
+        symbol:
+                SYmbol
+        :param start:
+        :param end:
+        :param amount:
+        :param tc:
+        :param sufix:
+        :param timeFrame:
+        :param price:
+        '''
 
 
         self.symbol = symbol # EUR_USD
@@ -252,10 +266,20 @@ class Momentum_Backtester(object):
         # self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
         plt.show()
 
+    def hist_returns(self):
+
+        if self.results is None:
+            print('No results to plot yet. Run a strategy.')
+        title = 'Histogram Returns - Momentum Backtesting - %s ' % (self.symbol)
+        self.results[['creturns_p','cstrategy_p']].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
+        # plt.hist(self.results['creturns_p'])
+        plt.show()
+
+
 
 if __name__ == '__main__':
     mombt = Momentum_Backtester('EUR_USD', start='2010-01-01', end='2015-01-01')
     print(mombt.run_strategy())
     # print(mombt.strat_drawdown())
-    print(mombt.plot_strategy())
-
+    # print(mombt.plot_strategy())
+    print(mombt.hist_returns())
