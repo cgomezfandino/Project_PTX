@@ -31,13 +31,14 @@ class Momentum_Backtester(object):
     plot_strategy:
         plots the performance of the strategy compared to the symbol
     '''
-    def __init__(self, symbol, start, end, amount=10000, tc=0.001, data_src='google'):
+    def __init__(self, symbol, start, end, amount=10000, tc=0.001, lvrage= 1, data_src='google'):
 
         self.symbol = symbol
         self.start = start
         self.end = end
         self.amount = amount
         self.tc = tc
+        self.lvrage = lvrage
         # price = OHLC
         self.data_source = data_src
         self.get_data()
@@ -87,12 +88,12 @@ class Momentum_Backtester(object):
         asset['strategy'][trades] -= self.tc
 
         ## Cumulative returns in Cash
-        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
-        asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(np.exp)
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
 
         ## Cumulative returns in percentage
-        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
-        asset['cstrategy_p'] = asset['strategy'].cumsum().apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
 
         ## Max Cummulative returns in cash
         asset['cmreturns_c'] = asset['creturns_c'].cummax()
@@ -139,7 +140,7 @@ class Momentum_Backtester(object):
             print('No results to plot yet. Run a strategy.')
 
         title = 'Momentum Backtesting - %s ' % (self.symbol)
-        self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
+        # self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
         self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
         plt.show()
 
@@ -153,8 +154,8 @@ class Momentum_Backtester(object):
         plt.show()
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('AAPL', '2010-1-1', '2016-10-31')
-    print(mombt.run_strategy())
+    mombt = Momentum_Backtester('AAPL', '2015-12-8', '2016-12-10', lvrage=10)
+    print(mombt.run_strategy(momentum=10))
     # print(mombt.strat_drawdown())
     print(mombt.plot_strategy())
 

@@ -31,13 +31,14 @@ class MRBT_Backtester(object):
     plot_strategy:
         plots the performance of the strategy compared to the symbol
     '''
-    def __init__(self, symbol, start, end, amount=10000, tc=0.001, data_src='google'):
+    def __init__(self, symbol, start, end, amount=10000, tc=0.001, lvrage = 1, data_src='google'):
 
         self.symbol = symbol
         self.start = start
         self.end = end
         self.amount = amount
         self.tc = tc
+        self.lvrage = lvrage
         # price = OHLC
         self.data_source = data_src
         self.get_data()
@@ -85,12 +86,12 @@ class MRBT_Backtester(object):
         asset['strategy'][trades] -= self.tc
 
         ## Cumulative returns in Cash
-        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
-        asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(np.exp)
+        asset['creturns_c'] = self.amount * asset['returns'].apply(lambda x: x * self.lvrage).cumsum().apply(np.exp)
+        asset['cstrategy_c'] = self.amount * asset['strategy'].apply(lambda x: x * self.lvrage).cumsum().apply(np.exp)
 
         ## Cumulative returns in percentage
-        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
-        asset['cstrategy_p'] = asset['strategy'].cumsum().apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
 
         ## Max Cummulative returns in cash
         asset['cmreturns_c'] = asset['creturns_c'].cummax()
@@ -148,7 +149,7 @@ class MRBT_Backtester(object):
             print('No results to plot yet. Run a strategy.')
         title = 'Histogram Returns - Mean Reverting Backtesting - %s ' % (self.symbol)
         self.results[['creturns_p','cstrategy_p']].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
-        # plt.hist(self.results['creturns_p'])
+
         plt.show()
 
     def plot_mr(self):
@@ -167,9 +168,10 @@ class MRBT_Backtester(object):
 
 
 if __name__ == '__main__':
-    mrbt = MRBT_Backtester('AAPL', '2010-1-1', '2016-10-31')
-    print(mrbt.run_strategy(SMA=10,threshold=7))
+    mrbt = MRBT_Backtester('AAPL', '2015-12-8', '2016-12-10', lvrage=30)
+    print(mrbt.run_strategy(SMA=20,threshold=7))
     # print(mombt.strat_drawdown())
+    # print(mrbt.hist_returns())
     print(mrbt.plot_strategy())
     print(mrbt.plot_mr())
 
