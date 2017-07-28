@@ -19,14 +19,14 @@ access_token = config['oanda_v20']['access_token']
 
 class MomentumStream(object):
 
-    def __init__(self, momentum, symbol, units, *args, **kwargs ):
+    def __init__(self, momentum, instrumemt, units, *args, **kwargs ):
 
         self.ticks = 0
         self.position = 0
         self.data = pd.DataFrame()
         self.momentum = momentum
         self.account_id = account_id
-        self.symbol = symbol
+        self.instrumemt = instrumemt
         self.units = units
 
         self.ctx = v20.Context(
@@ -51,7 +51,7 @@ class MomentumStream(object):
         ''' Places orders with Oanda'''
         request = self.ctx.order.market(
         self.account_id,
-        instrument = self.symbol,
+        instrument = self.instrumemt,
         units = units,
         )
         order = request.get('orderFillTransaction')
@@ -63,11 +63,12 @@ class MomentumStream(object):
         response = self.ctx_stream.pricing.stream(
             self.account_id,
             snapshot=True,
-            instruments=self.symbol
+            instruments=self.instrumemt
         )
+
         for msg_type, msg in response.parts():
             if msg_type == 'pricing.Price':
-                self.on_success(msg.time, msg.ask[0].price)
+                self.on_success(msg.time, msg.asks[0].price)
             if self.ticks == 250:
                 if self.position == 1:
                     self.create_order(-self.units)
@@ -79,17 +80,15 @@ class MomentumStream(object):
         ''' Takes action when new tick data arrives.'''
 
         self.ticks += 1
-        # print(self.ticks, end = ' ')
+        print(self.ticks)
         self.data = self.data.append(
             pd.DataFrame({'time': [time], 'ask': [ask]})
         )
         self.data.index = pd.DatetimeIndex(self.data['time'])
         resam = self.data.resample('1min').last()
         # resam = resam.ffill()
-        resam['returns'] = np.log(resam['ask'] / resam['ask'].shif(1))
-        resam['position'] = np.sign(
-            resam['returns'].rolling(self.momentum).mean()
-        )
+        resam['returns'] = np.log(resam['ask'] / resam['ask'].shift(1))
+        resam['position'] = np.sign(resam['returns'].rolling(self.momentum).mean())
         # print(resam[['ask', 'returns', 'position']].tail())
 
         if resam['position'].ix[-1] == 1:
@@ -105,6 +104,6 @@ class MomentumStream(object):
                 self.create_order(-self.units * 2)
             self.position = -1
 
-mtStream = MomentumStream(momentum=6, symbol='EUR_USD', units= 50000)
+mtStream = MomentumStream(momentum=6, instrumemt='EUR_USD', units= 50000)
 
 mtStream.start()
