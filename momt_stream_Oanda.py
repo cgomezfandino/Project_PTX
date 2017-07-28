@@ -80,7 +80,7 @@ class MomentumStream(object):
         ''' Takes action when new tick data arrives.'''
 
         self.ticks += 1
-        print(self.ticks)
+        print self.ticks,
         self.data = self.data.append(
             pd.DataFrame({'time': [time], 'ask': [ask]})
         )
