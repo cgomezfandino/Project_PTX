@@ -57,7 +57,6 @@ class MRBT_Backtester(object):
         :param price:
         '''
 
-
         self.symbol = symbol # EUR_USD
         # self.start = start
         # self.end = end
@@ -144,6 +143,7 @@ class MRBT_Backtester(object):
         mdd_p:Maximum Drawdown in Percentage
        '''
 
+        dicti = {'Mean Reverting Strategies': {}}
         asset = self.asset.copy()
         self.SMA = SMA
         self.threshold = threshold
@@ -212,7 +212,14 @@ class MRBT_Backtester(object):
         ## Maximum Drawdown in Percentage
         mdd_p = self.results['ddstrategy_p'].max()
 
-        return np.round(aperf_c,2), round(aperf_p,2), round(operf_c,2), round(operf_p,3), mdd_c, mdd_p
+        keys = ['aperf_c_%i' %SMA, 'aperf_p_%i' %SMA, 'operf_c_%i' %SMA, 'operf_p_%i' %SMA, 'mdd_c_%i' %SMA, 'mdd_p_%i' %SMA]
+        values = [aperf_c, aperf_p, operf_c, operf_p, mdd_c, mdd_p]
+        res = dict(zip(keys, values))
+
+        dicti['Mean Reverting Strategies']['strategy_%i' %SMA] = res
+
+        # return np.round(aperf_c,2), round(aperf_p,2), round(operf_c,2), round(operf_p,3), mdd_c, mdd_p
+        return dicti
 
     def plot_strategy(self):
 
@@ -222,7 +229,7 @@ class MRBT_Backtester(object):
 
             print('No results to plot yet. Run a strategy.')
 
-        title = 'Mean Reverting Backtesting - %s ' % (self.symbol)
+        title = 'Mean Reverting (%i) Backtesting - %s ' % (self.SMA, self.symbol)
         self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
         # self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
         plt.show()
@@ -231,7 +238,7 @@ class MRBT_Backtester(object):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'Histogram Returns - Mean Reverting Backtesting - %s ' % (self.symbol)
+        title = 'Histogram Returns - Mean Reverting (%i) Backtesting - %s ' % (self.SMA, self.symbol)
         self.results[['creturns_p','cstrategy_p']].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
@@ -241,7 +248,7 @@ class MRBT_Backtester(object):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
 
-        title = 'Mean Reverting Backtesting - %s ' % (self.symbol)
+        title = 'Mean Reverting (%i) Backtesting - %s ' % (self.SMA, self.symbol)
         self.results[['distance']].plot(title=title, figsize=(10, 6))
         plt.axhline(self.threshold, color='r')
         plt.axhline(-self.threshold, color='r')

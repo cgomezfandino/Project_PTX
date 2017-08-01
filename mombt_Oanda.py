@@ -146,6 +146,7 @@ class Momentum_Backtester(object):
 
         asset = self.asset.copy()
         self.momentum = momentum
+        dicti = {'Momentum Strategies': {}}
         # self.str_rtrn = ['returns']
         # self.drawdown = []
         #self.cumrent = []
@@ -203,7 +204,15 @@ class Momentum_Backtester(object):
         ## Maximum Drawdown in Percentage
         mdd_p = self.results['ddstrategy_p'].max()
 
-        return np.round(aperf_c,2), round(aperf_p,2), round(operf_c,2), round(operf_p,3), mdd_c, mdd_p
+        keys = ['aperf_c_%i' %momentum, 'aperf_p_%i' %momentum, 'operf_c_%i' %momentum, 'operf_p_%i' %momentum, 'mdd_c_%i' %momentum, 'mdd_p_%i' %momentum]
+        values = [aperf_c, aperf_p, operf_c, operf_p, mdd_c, mdd_p]
+        res = dict(zip(keys, values))
+
+        dicti['Momentum Strategies']['strategy_%i' %momentum] = res
+
+        # return np.round(aperf_c,2), round(aperf_p,2), round(operf_c,2), round(operf_p,3), mdd_c, mdd_p
+        return dicti
+
 
     def plot_strategy(self):
 
@@ -212,7 +221,7 @@ class Momentum_Backtester(object):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
 
-        title = 'Momentum Backtesting - %s ' % (self.symbol)
+        title = 'Momentum (%i) Backtesting - %s ' % (self.momentum,self.symbol)
         # self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
         self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
         plt.show()
@@ -221,7 +230,7 @@ class Momentum_Backtester(object):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'Histogram Returns - Momentum Backtesting - %s ' % (self.symbol)
+        title = 'Histogram Returns - Momentum (%i) Backtesting - %s ' % (self.momentum,self.symbol)
         self.results[['creturns_p','cstrategy_p']].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
