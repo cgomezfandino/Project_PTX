@@ -1,25 +1,18 @@
 __author__ = 'cgomezfandino@gmail.com'
 
-import datetime as dt
-import v20
-from configparser import ConfigParser
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from pandas_datareader import data as web
 import seaborn
 
-# Create an object config
-config = ConfigParser()
-# Read the config
-config.read("pyalgo.cfg")
-
-
 class Momentum_Backtester(object):
+
     ''' Momentum backtesting strategy:
     Attributes
     ==========
     symbol: str
-        Oanda symbol with which to work with
+        Google Finance symbol with which to work with
     start: str
         start date for data retrieval
     end: str
@@ -28,10 +21,6 @@ class Momentum_Backtester(object):
         amount to be invested at the beginning
     tc: float
         proportional transaction costs (e.g. 0.3% = 0.003) per trade
-    sufix: str
-
-    timeFrame:
-        Candle TimeFrame
 
     Methods
     =========
@@ -42,91 +31,29 @@ class Momentum_Backtester(object):
     plot_strategy:
         plots the performance of the strategy compared to the symbol
     '''
+    def __init__(self, symbol, start, end, amount=10000, tc=0.001, lvrage= 1, data_src='google'):
 
-    def __init__(self, symbol, start, end, amount=10000, tc=0.000, lvrage=1, sufix='.000000000Z', timeFrame='H4',
-                 price='A'):
-
-        '''
-        symbol:
-                SYmbol
-        :param start:
-        :param end:
-        :param amount:
-        :param tc:
-        :param sufix:
-        :param timeFrame:
-        :param price:
-        '''
-
-        self.symbol = symbol  # EUR_USD
-        # self.start = start
-        # self.end = end
+        self.symbol = symbol
+        self.start = start
+        self.end = end
         self.amount = amount
         self.tc = tc
         self.lvrage = lvrage
-        self.suffix = sufix
-        self.timeFrame = timeFrame
-        self.price = price
-        self.start = dt.datetime.combine(pd.to_datetime(start), dt.time(9, 00))
-        self.end = dt.datetime.combine(pd.to_datetime(end), dt.time(16, 00))
-        # This string suffix is needed to conform to the Oanda API requirements regarding start and end times.
-        self.fromTime = self.start.isoformat('T') + self.suffix
-        self.toTime = self.end.isoformat('T') + self.suffix
+        # price = OHLC
+        self.data_source = data_src
+        self.get_data()
         self.results = None
-
         self.toplot_c = ['creturns_c']
         self.toplot_p = ['creturns_p']
 
-        self.ctx = v20.Context(
-            'api-fxpractice.oanda.com',
-            443,
-            True,
-            application='sample_code',
-            token=config['oanda_v20']['access_token'],
-            datetime_format='RFC3339')
-        self.get_data()
-
     def get_data(self):
 
-        res = self.ctx.instrument.candles(
-            instrument=self.symbol,
-            fromTime=self.fromTime,
-            toTime=self.toTime,
-            granularity=self.timeFrame,
-            price=self.price)
-
-        # data.keys()
-
-        raw = res.get('candles')
-
-        raw = [cs.dict() for cs in raw]
-
-        for cs in raw:
-            cs.update(cs['ask'])
-            del cs['ask']
-
-        data = pd.DataFrame(raw)
-
-        data['time'] = pd.to_datetime(data['time'], unit='ns')
-
-        data = data.set_index('time')
-
-        data.index = pd.DatetimeIndex(data.index)
-
-        # print data.info()
-
-        cols = ['c', 'l', 'h', 'o']
-
-        data[cols] = data[cols].astype('float64')
-
-        data.rename(columns={'c': 'CloseAsk', 'l': 'LowAsk',
-                             'h': 'HighAsk', 'o': 'OpenAsk'}, inplace=True)
-
-        data['returns'] = np.log(data['CloseAsk'] / data['CloseAsk'].shift(1))
-
+        data = web.DataReader(name=self.symbol, data_source=self.data_source, start=self.start, end=self.end)
+        ## Asset Returns
+        data['returns'] = np.log(data['Close']/data['Close'].shift(1))
         self.asset = data
 
-    def run_strategy(self, momentum=1):
+    def run_strategy(self, momentum = 1):
 
         '''
         This function run a momentum backtest.
@@ -166,7 +93,6 @@ class Momentum_Backtester(object):
         y = []
 
         for i in momentum:
-
             asset['position_%i' % i] = np.sign(asset['returns'].rolling(i).mean())
             asset['strategy_%i' % i] = asset['position_%i' % i].shift(1) * asset['returns']
 
@@ -196,8 +122,6 @@ class Momentum_Backtester(object):
             ## Max Drawdown in Percentage
             asset['ddstrategy_p_%i' % i] = asset['cmstrategy_p_%i' % i] - asset['cstrategy_p_%i' % i]
 
-
-            ## Adding values that we wanna plot
             self.toplot_c.append('cstrategy_c_%i' % i)
             self.toplot_p.append('cstrategy_p_%i' % i)
 
@@ -207,46 +131,49 @@ class Momentum_Backtester(object):
             ## Final calculations for return
 
             ## absolute Strategy performance in Cash:
-            aperf_c = self.results['cstrategy_c_%i' %i].ix[-1]
+            aperf_c = self.results['cstrategy_c_%i' % i].ix[-1]
             ## absolute Strategy performance in Percentage:
-            aperf_p = self.results['cstrategy_p_%i' %i].ix[-1]
+            aperf_p = self.results['cstrategy_p_%i' % i].ix[-1]
             ## Out-/underperformance Of strategy in Cash
             operf_c = aperf_c - self.results['creturns_c'].ix[-1]
             ## Out-/underperformance Of strategy in Percentage
             operf_p = aperf_p - self.results['creturns_p'].ix[-1]
 
             ## Maximum Drawdown in Cash
-            mdd_c = self.results['ddstrategy_c_%i' %i].max()
+            mdd_c = self.results['ddstrategy_c_%i' % i].max()
             ## Maximum Drawdown in Percentage
-            mdd_p = self.results['ddstrategy_p_%i' %i].max()
+            mdd_p = self.results['ddstrategy_p_%i' % i].max()
 
-            keys = ['aperf_c_%i' %i , 'aperf_p_%i' %i, 'operf_c_%i' %i, 'operf_p_%i' %i, 'mdd_c_%i' %i, 'mdd_p_%i' %i]
+            keys = ['aperf_c_%i' % i, 'aperf_p_%i' % i, 'operf_c_%i' % i, 'operf_p_%i' % i, 'mdd_c_%i' % i, 'mdd_p_%i' % i]
             values = ['%.2f' % np.round(aperf_c, 2), '%.2f' % np.round(aperf_p, 2), '%.2f' % np.round(operf_c, 2),
                       '%.2f' % np.round(operf_p, 2), '%.2f' % np.round(mdd_c, 2), '%.2f' % np.round(mdd_p, 2)]
 
-            res = dict(zip(keys,values))
+            res = dict(zip(keys, values))
 
-            dicti['Momentum Strategies']['strategy_%i'%i] = res
+            dicti['Momentum Strategies']['strategy_%i' % i] = res
 
-            x.append(momentum)
+            x.append(i)
             y.append(aperf_p)
 
-        return  dicti
+        self.x = x
+        self.y = y
+
+        return dicti
+
 
     def plot_strategy(self):
-
         # self.results = self.run_strategy()
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
 
         title = 'Momentum Backtesting - %s ' % (self.symbol)
-        # self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
-        self.results[self.toplot_c].plot(title=title, figsize=(10, 6)) #Cash
+        self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
+        self.results[self.toplot_c].plot(title=title, figsize=(10, 6))  # Cash
         plt.show()
 
-    def hist_returns(self):
 
+    def hist_returns(self):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
         title = 'Histogram Returns - Momentum Backtesting - %s ' % (self.symbol)
@@ -254,20 +181,20 @@ class Momentum_Backtester(object):
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
-    def plot_strtll(self):
+
+    def plot_bstmom(self):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
         title = 'Histogram Returns - Momentum Backtesting - %s ' % (self.symbol)
-        plt.plot(x,y)
+        plt.plot(self.x, self.y)
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
 
-
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('EUR_USD', start='2015-12-08', end='2016-12-10', lvrage=10)
-    print(mombt.run_strategy(momentum=[1,20,50,100]))
+    mombt = Momentum_Backtester('AAPL', '2015-12-8', '2016-12-10', lvrage=10)
+    print(mombt.run_strategy(momentum=[x for x in range(0,300,20)]))
     # print(mombt.strat_drawdown())
     print(mombt.plot_strategy())
-    # print(mombt.hist_returns())
-    print(mombt.plot_strtll())
+    print(mombt.plot_bstmom())
+

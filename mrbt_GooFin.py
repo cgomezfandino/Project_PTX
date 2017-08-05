@@ -130,7 +130,9 @@ class MRBT_Backtester(object):
         mdd_p = self.results['ddstrategy_p'].max()
 
         keys = ['aperf_c_%i' %SMA, 'aperf_p_%i' %SMA, 'operf_c_%i' %SMA, 'operf_p_%i' %SMA, 'mdd_c_%i' %SMA, 'mdd_p_%i' %SMA]
-        values = [aperf_c, aperf_p, operf_c, operf_p, mdd_c, mdd_p]
+        values = ['%.2f' % np.round(aperf_c, 2), '%.2f' % np.round(aperf_p, 2), '%.2f' % np.round(operf_c, 2),
+                  '%.2f' % np.round(operf_p, 2), '%.2f' % np.round(mdd_c, 2), '%.2f' % np.round(mdd_p, 2)]
+
         res = dict(zip(keys, values))
 
         dicti['Mean Reverting Strategies']['strategy_%i' %SMA] = res

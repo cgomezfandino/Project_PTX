@@ -113,6 +113,7 @@ class Momentum_Backtester(object):
         asset['ddreturns_p'] = asset['cmreturns_p'] - asset['creturns_p']
         asset['ddstrategy_p'] = asset['cmstrategy_p'] - asset['cstrategy_p']
 
+
         ## save asset df into self.results
         self.results = asset
 
@@ -132,7 +133,8 @@ class Momentum_Backtester(object):
         mdd_p = self.results['ddstrategy_p'].max()
 
         keys = ['aperf_c_%i' %momentum, 'aperf_p_%i' %momentum, 'operf_c_%i' %momentum, 'operf_p_%i' %momentum, 'mdd_c_%i' %momentum, 'mdd_p_%i' %momentum]
-        values = [aperf_c, aperf_p, operf_c, operf_p, mdd_c, mdd_p]
+        values = ['%.2f' %np.round(aperf_c,2), '%.2f' %np.round(aperf_p,2), '%.2f' %np.round(operf_c,2), '%.2f' %np.round(operf_p,2),
+                  '%.2f' %np.round(mdd_c,2), '%.2f' %np.round(mdd_p,2)]
         res = dict(zip(keys, values))
 
         dicti['Momentum Strategies']['strategy_%i' %momentum] = res
@@ -163,7 +165,7 @@ class Momentum_Backtester(object):
 
 if __name__ == '__main__':
     mombt = Momentum_Backtester('AAPL', '2015-12-8', '2016-12-10', lvrage=10)
-    print(mombt.run_strategy(momentum=10))
+    print(mombt.run_strategy(momentum=120))
     # print(mombt.strat_drawdown())
     print(mombt.plot_strategy())
 
