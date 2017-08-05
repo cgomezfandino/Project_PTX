@@ -1,0 +1,8 @@
+import datetime as dt
+import v20
+from configparser import ConfigParser
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn
+from pandas_datareader import data as web
