@@ -11,9 +11,9 @@ import seaborn
 # Create an object config
 config = ConfigParser()
 # Read the config
-config.read("pyalgo.cfg")
+config.read("../API_Connection_Oanda/pyalgo.cfg")
 
-class MRBT_Backtester(object):
+class Momentum_Backtester(object):
 
     ''' Momentum backtesting strategy:
     Attributes
@@ -42,7 +42,7 @@ class MRBT_Backtester(object):
     plot_strategy:
         plots the performance of the strategy compared to the symbol
     '''
-    def __init__(self, symbol, start, end, amount = 10000, tc = 0.000, lvrage =1 , sufix = '.000000000Z', timeFrame = 'H4', price = 'A'):
+    def __init__(self, symbol, start, end, amount = 10000, tc = 0.000, lvrage=1, sufix = '.000000000Z', timeFrame = 'H4', price = 'A'):
 
         '''
 
@@ -56,6 +56,7 @@ class MRBT_Backtester(object):
         :param timeFrame:
         :param price:
         '''
+
 
         self.symbol = symbol # EUR_USD
         # self.start = start
@@ -123,7 +124,7 @@ class MRBT_Backtester(object):
 
         self.asset = data
 
-    def run_strategy(self, SMA, threshold_std):
+    def run_strategy(self, momentum = 1):
 
         '''
         This function run a momentum backtest.
@@ -143,27 +144,15 @@ class MRBT_Backtester(object):
         mdd_p:Maximum Drawdown in Percentage
        '''
 
-        dicti = {'Mean Reverting Strategies': {}}
         asset = self.asset.copy()
-        self.SMA = SMA
-
-
+        self.momentum = momentum
+        dicti = {'Momentum Strategies': {}}
         # self.str_rtrn = ['returns']
         # self.drawdown = []
         #self.cumrent = []
 
-        asset['sma'] = asset['CloseAsk'].rolling(self.SMA).mean()
-        asset['distance'] = asset['CloseAsk'] - asset['sma']
-
-        self.threshold = threshold_std * np.std(asset['distance'])
-
         ## Position
-        asset['position'] = np.where(asset['distance'] > self.threshold, -1, np.nan)
-        asset['position'] = np.where(asset['distance'] < -self.threshold, 1, asset['position'])
-        asset['position'] = np.where(asset['distance'] * asset['distance'].shift(1) < 0, 0, asset['position'])
-        ## Fill al na for 0
-        asset['position'] = asset['position'].ffill().fillna(0)
-
+        asset['position'] = np.sign(asset['returns'].rolling(momentum).mean())
         asset['strategy'] = asset['position'].shift(1) * asset['returns']
 
         ## determinate when a trade takes places (long or short)
@@ -215,56 +204,43 @@ class MRBT_Backtester(object):
         ## Maximum Drawdown in Percentage
         mdd_p = self.results['ddstrategy_p'].max()
 
-        keys = ['aperf_c_%i' %SMA, 'aperf_p_%i' %SMA, 'operf_c_%i' %SMA, 'operf_p_%i' %SMA, 'mdd_c_%i' %SMA, 'mdd_p_%i' %SMA]
+        keys = ['aperf_c_%i' %momentum, 'aperf_p_%i' %momentum, 'operf_c_%i' %momentum, 'operf_p_%i' %momentum, 'mdd_c_%i' %momentum, 'mdd_p_%i' %momentum]
         values = ['%.2f' % np.round(aperf_c, 2), '%.2f' % np.round(aperf_p, 2), '%.2f' % np.round(operf_c, 2),
-                  '%.2f' % np.round(operf_p, 2), '%.2f' % np.round(mdd_c, 2), '%.2f' % np.round(mdd_p, 2)]
-
+                  '%.2f' % np.round(operf_p, 2),'%.2f' % np.round(mdd_c, 2), '%.2f' % np.round(mdd_p, 2)]
         res = dict(zip(keys, values))
 
-        dicti['Mean Reverting Strategies']['strategy_%i' %SMA] = res
+        dicti['Momentum Strategies']['strategy_%i' %momentum] = res
 
         # return np.round(aperf_c,2), round(aperf_p,2), round(operf_c,2), round(operf_p,3), mdd_c, mdd_p
         return dicti
+
 
     def plot_strategy(self):
 
         #self.results = self.run_strategy()
 
         if self.results is None:
-
             print('No results to plot yet. Run a strategy.')
 
-        title = 'Mean Reverting (%i) Backtesting - %s ' % (self.SMA, self.symbol)
-        self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
-        # self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
+        title = 'Momentum (%i) Backtesting - %s \n %s' % (self.momentum,self.symbol,self.timeFrame)
+        # self.results[['creturns_c', 'cstrategy_c']].plot(title=title, figsize=(10, 6))
+        self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
         plt.show()
 
     def hist_returns(self):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'Histogram Returns - Mean Reverting (%i) Backtesting - %s ' % (self.SMA, self.symbol)
+        title = 'Histogram Returns - Momentum (%i) Backtesting - %s \n %s ' % (self.momentum,self.symbol, self.timeFrame)
         self.results[['creturns_p','cstrategy_p']].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
-    def plot_mr(self):
-
-        if self.results is None:
-            print('No results to plot yet. Run a strategy.')
-
-        title = 'Mean Reverting (%i) Backtesting - %s ' % (self.SMA, self.symbol)
-        self.results[['distance']].plot(title=title, figsize=(10, 6))
-        plt.axhline(self.threshold, color='r')
-        plt.axhline(-self.threshold, color='r')
-        plt.axhline(0, color='r')
-        # self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
-        plt.show()
 
 
 if __name__ == '__main__':
-    mrbt = MRBT_Backtester('EUR_USD', '2015-12-8', '2016-12-10', lvrage=10)
-    print(mrbt.run_strategy(SMA=50,threshold_std= 1))
-    print(mrbt.plot_strategy())
-    print(mrbt.plot_mr())
-    print(mrbt.hist_returns())
+    mombt = Momentum_Backtester('AUD_JPY', start='2015-12-08', end='2016-12-10',lvrage=10)
+    print(mombt.run_strategy(momentum=20))
+    # print(mombt.strat_drawdown())
+    print(mombt.plot_strategy())
+    # print(mombt.hist_returns())
