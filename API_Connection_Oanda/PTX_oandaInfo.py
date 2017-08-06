@@ -4,7 +4,7 @@ import v20
 # Create an object config
 config = ConfigParser()
 # Read the config
-config.read("pyalgo.cfg")
+config.read("../API_Connection_Oanda/pyalgo.cfg")
 
 ctx = v20.Context(
     'api-fxpractice.oanda.com',

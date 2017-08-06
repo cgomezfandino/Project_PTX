@@ -11,7 +11,7 @@ import seaborn
 # Create an object config
 config = ConfigParser()
 # Read the config
-config.read("pyalgo.cfg")
+config.read("../API_Connection_Oanda/pyalgo.cfg")
 
 
 account_id = config['oanda_v20']['account_id']

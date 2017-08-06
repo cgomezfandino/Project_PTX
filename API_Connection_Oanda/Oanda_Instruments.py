@@ -10,7 +10,7 @@ config = configparser.ConfigParser()
 
 ### Connection to know the account number
 
-config.read('pyalgo.cfg')
+config.read('../API_Connection_Oanda/pyalgo.cfg')
 ctx = v20.Context(
     'api-fxpractice.oanda.com',
     443,
