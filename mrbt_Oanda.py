@@ -123,7 +123,7 @@ class MRBT_Backtester(object):
 
         self.asset = data
 
-    def run_strategy(self, SMA, threshold):
+    def run_strategy(self, SMA, threshold_std):
 
         '''
         This function run a momentum backtest.
@@ -146,7 +146,8 @@ class MRBT_Backtester(object):
         dicti = {'Mean Reverting Strategies': {}}
         asset = self.asset.copy()
         self.SMA = SMA
-        self.threshold = threshold
+
+
         # self.str_rtrn = ['returns']
         # self.drawdown = []
         #self.cumrent = []
@@ -154,9 +155,11 @@ class MRBT_Backtester(object):
         asset['sma'] = asset['CloseAsk'].rolling(self.SMA).mean()
         asset['distance'] = asset['CloseAsk'] - asset['sma']
 
+        self.threshold = threshold_std * np.std(asset['distance'])
+
         ## Position
         asset['position'] = np.where(asset['distance'] > self.threshold, -1, np.nan)
-        asset['position'] = np.where(asset['distance'] < self.threshold, 1, asset['position'])
+        asset['position'] = np.where(asset['distance'] < -self.threshold, 1, asset['position'])
         asset['position'] = np.where(asset['distance'] * asset['distance'].shift(1) < 0, 0, asset['position'])
         ## Fill al na for 0
         asset['position'] = asset['position'].ffill().fillna(0)
@@ -259,10 +262,9 @@ class MRBT_Backtester(object):
         plt.show()
 
 
-
 if __name__ == '__main__':
     mrbt = MRBT_Backtester('EUR_USD', '2015-12-8', '2016-12-10', lvrage=10)
-    print(mrbt.run_strategy(SMA=50,threshold=0.025))
+    print(mrbt.run_strategy(SMA=50,threshold_std= 1))
     print(mrbt.plot_strategy())
     print(mrbt.plot_mr())
     print(mrbt.hist_returns())
