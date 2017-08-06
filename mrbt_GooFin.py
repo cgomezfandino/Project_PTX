@@ -181,8 +181,7 @@ class MRBT_Backtester(object):
 if __name__ == '__main__':
     mrbt = MRBT_Backtester('AAPL', '2015-12-8', '2016-12-10', lvrage=30)
     print(mrbt.run_strategy(SMA=20,threshold=7))
-    # print(mombt.strat_drawdown())
-    # print(mrbt.hist_returns())
     print(mrbt.plot_strategy())
     print(mrbt.plot_mr())
+    # print(mrbt.hist_returns())
 

@@ -91,6 +91,7 @@ class Momentum_Backtester(object):
         dicti = {'Momentum Strategies': {}}
         x = []
         y = []
+        z = []
 
         for i in momentum:
             asset['position_%i' % i] = np.sign(asset['returns'].rolling(i).mean())
@@ -154,9 +155,12 @@ class Momentum_Backtester(object):
 
             x.append(i)
             y.append(aperf_p)
+            z.append(mdd_p)
 
-        self.x = x
-        self.y = y
+
+        self.x = x #momentums
+        self.y = y #final returns
+        self.z = z #mdd
 
         return dicti
 
@@ -183,18 +187,35 @@ class Momentum_Backtester(object):
 
 
     def plot_bstmom(self):
+
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'Histogram Returns - Momentum Backtesting - %s ' % (self.symbol)
-        plt.plot(self.x, self.y)
-        # plt.hist(self.results['creturns_p'])
+        title = 'All momentum Strategies Final Returns - %s ' % (self.symbol)
+
+        # fig, ax1 = plt.subplots()
+        # ax1.plot(self.x,self.y, 'b-', alpha = 0.5)
+        # ax1.set_ylabel('Final Returns', color='b')
+        # ax1.tick_params('y', colors='b')
+        # ax2 = ax1.twinx()
+        # ax2.plot(self.x,self.z, 'r--')
+        # ax2.set_ylabel('Max.Drawdown', color='r')
+        # ax2.tick_params('y', colors='r')
+        # fig.tight_layout()
+        # plt.legend()
+
+        plt.plot(self.x, self.y, 'b-o', alpha = 0.5)
+        plt.plot(self.x, self.z, 'r--', alpha = 0.5)
+        plt.title(title)
+        plt.legend(['Final Returns', 'Maximum Drawdown'])
+        plt.xlabel('Momentums')
+        plt.ylabel('Returns/MDD')
         plt.show()
 
 
 if __name__ == '__main__':
     mombt = Momentum_Backtester('AAPL', '2015-12-8', '2016-12-10', lvrage=10)
     print(mombt.run_strategy(momentum=[x for x in range(0,300,20)]))
-    # print(mombt.strat_drawdown())
     print(mombt.plot_strategy())
+    print(mombt.hist_returns())
     print(mombt.plot_bstmom())
 

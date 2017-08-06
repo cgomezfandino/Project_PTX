@@ -263,6 +263,6 @@ class MRBT_Backtester(object):
 if __name__ == '__main__':
     mrbt = MRBT_Backtester('EUR_USD', '2015-12-8', '2016-12-10', lvrage=10)
     print(mrbt.run_strategy(SMA=50,threshold=0.025))
-    # print(mombt.strat_drawdown())
     print(mrbt.plot_strategy())
     print(mrbt.plot_mr())
+    print(mrbt.hist_returns())

@@ -27,4 +27,4 @@ ax1.plot(df.YHOO, 'r')
 # ax2.plot(df.GOOG, 'b')
 # fig.tight_layout()
 plt.show()
-print df
+# print df

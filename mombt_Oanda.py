@@ -239,7 +239,7 @@ class Momentum_Backtester(object):
 
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('EUR_USD', start='2015-12-08', end='2016-12-10',lvrage=10)
+    mombt = Momentum_Backtester('AUD_JPY', start='2015-12-08', end='2016-12-10',lvrage=10)
     print(mombt.run_strategy(momentum=20))
     # print(mombt.strat_drawdown())
     print(mombt.plot_strategy())
