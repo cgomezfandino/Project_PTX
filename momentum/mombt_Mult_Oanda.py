@@ -291,7 +291,7 @@ class Momentum_Backtester(object):
 
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('AUD_JPY', start='2015-12-08', end='2016-12-10', lvrage=10) #EUR_USD
+    mombt = Momentum_Backtester('EUR_USD', start='2015-12-08', end='2016-12-10', lvrage=10) #EUR_USD, AUD_JPY
     print(mombt.run_strategy(momentum=[x for x in range(0,220,20)]))
     print(mombt.plot_strategy())
     print(mombt.plot_bstmom())

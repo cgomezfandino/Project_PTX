@@ -137,7 +137,7 @@ class Momentum_Backtester(object):
         return self.asset
 
 
-    def run_strategy(self, momentum=1, roll = 100, r = 0.0225):
+    def run_strategy(self, momentum=1, roll = 100, r = 0.0225, halfKC = True):
 
         '''
         This function run a momentum backtest.
@@ -163,20 +163,27 @@ class Momentum_Backtester(object):
         # self.drawdown = []
         # self.cumrent = []
 
-        asset['meanRoll'] = asset['returns'].rolling(roll).mean() * 6 * 252
-        asset['stdRoll'] = asset['returns'].rolling(roll).std() * 6 * 252 ** 0.5
-        asset['KC'] = np.where( ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 < 1, 1, ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 )
-        asset['KC'].fillna(1,inplace =True)
+        if halfKC is True:
+            asset['meanRoll'] = asset['returns'].rolling(roll).mean() * 6 * 252
+            asset['stdRoll'] = asset['returns'].rolling(roll).std() * 6 * 252 ** 0.5
+            asset['KC'] = np.where( ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 < 1, 1, ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 )
+            asset['KC'].fillna(1,inplace =True)
+        else:
+            asset['meanRoll'] = asset['returns'].rolling(roll).mean() * 6 * 252
+            asset['stdRoll'] = asset['returns'].rolling(roll).std() * 6 * 252 ** 0.5
+            asset['KC'] = np.where( ((asset['meanRoll'] - r) / asset['stdRoll']**2) < 1, 1, ((asset['meanRoll'] - r) / asset['stdRoll']**2) )
+            asset['KC'].fillna(1,inplace =True)
+
         # self.lvrage = asset['KC']
 
 
         ## Position
 
-        asset['returns'] = asset['returns'] * self.lvrage
+        asset['lreturns'] = asset['returns'] * asset['KC'] #self.lvrage
         # asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        asset['creturns_c'] = self.amount * asset['lreturns'].cumsum().apply(np.exp)
         # asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
+        asset['creturns_p'] = asset['lreturns'].cumsum().apply(np.exp)
         asset['cmreturns_c'] = asset['creturns_c'].cummax()
         asset['cmreturns_p'] = asset['creturns_p'].cummax()
         asset['ddreturns_c'] = asset['cmreturns_c'] - asset['creturns_c']
@@ -271,7 +278,7 @@ class Momentum_Backtester(object):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
 
-        title = 'Momentum Backtesting - %s \n %s ' % (self.symbol,self.timeFrame)
+        title = 'Momentum Backtesting - %s \n %s (Kelly Criterion)' % (self.symbol,self.timeFrame)
         # self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
         self.results[self.toplot_c].plot(title=title, figsize=(10, 6)) #Cash
         plt.show()
@@ -280,7 +287,7 @@ class Momentum_Backtester(object):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'Histogram Returns - Momentum Backtesting - %s \n %s' % (self.symbol,self.timeFrame)
+        title = 'Histogram Returns - Momentum Backtesting - %s \n %s (Kelly Criterion)' % (self.symbol,self.timeFrame)
         self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha=0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
@@ -289,7 +296,7 @@ class Momentum_Backtester(object):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'All Momentum Strategies Final Returns - %s \n %s ' % (self.symbol,self.timeFrame)
+        title = 'All Momentum Strategies Final Returns - %s \n %s (Kelly Criterion)' % (self.symbol,self.timeFrame)
 
         # fig, ax1 = plt.subplots()
         # ax1.plot(self.x,self.y, 'b-', alpha = 0.5)
@@ -312,8 +319,8 @@ class Momentum_Backtester(object):
 
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('AUD_JPY', start='2015-12-08', end='2016-12-10', lvrage= 20) #EUR_USD
-    print(mombt.run_strategy(momentum=[x for x in range(0,220,20)]))
+    mombt = Momentum_Backtester('EUR_USD', start='2015-12-08', end='2016-12-10', lvrage= 20) #EUR_USD, AUD_JPY
+    print(mombt.run_strategy(momentum=[x for x in range(0,220,20)], halfKC=True)) # True: half KellyCreiterion, False: KellyCrieterion
     # print(mombt.dataReturn())
     print(mombt.plot_strategy())
     print(mombt.plot_bstmom())
