@@ -45,6 +45,7 @@ class Momentum_Backtester(object):
         self.results = None
         self.toplot_c = ['creturns_c']
         self.toplot_p = ['creturns_p']
+        self.toplot_hist = ['returns']
 
     def get_data(self):
 
@@ -97,6 +98,9 @@ class Momentum_Backtester(object):
             asset['position_%i' % i] = np.sign(asset['returns'].rolling(i).mean())
             asset['strategy_%i' % i] = asset['position_%i' % i].shift(1) * asset['returns']
 
+            asset['lstrategy_%i' % i] = asset['strategy_%i' % i] * self.lvrage
+            self.toplot_hist.append('lstrategy_%i' % i)
+
             ## determinate when a trade takes places (long or short)
             trades = asset['position_%i' % i].diff().fillna(0) != 0
 
@@ -104,12 +108,12 @@ class Momentum_Backtester(object):
             asset['strategy_%i' % i][trades] -= self.tc
 
             ## Cumulative returns in Cash
-            asset['cstrategy_c_%i' % i] = self.amount * asset['strategy_%i' % i].cumsum().apply(
-                lambda x: x * self.lvrage).apply(np.exp)
+            # asset['cstrategy_c_%i' % i] = self.amount * asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+            asset['cstrategy_c_%i' % i] = self.amount * asset['lstrategy_%i' % i].cumsum().apply(np.exp)
 
             ## Cumulative returns in percentage
-            asset['cstrategy_p_%i' % i] = asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(
-                np.exp)
+            # asset['cstrategy_p_%i' % i] = asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+            asset['cstrategy_p_%i' % i] = asset['lstrategy_%i' % i].cumsum().apply(np.exp)
 
             ## Max Cummulative returns in cash
             asset['cmstrategy_c_%i' % i] = asset['cstrategy_c_%i' % i].cummax()
@@ -181,7 +185,7 @@ class Momentum_Backtester(object):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
         title = 'Histogram Returns - Momentum Backtesting - %s ' % (self.symbol)
-        self.results[self.toplot_p].plot.hist(title=title, figsize=(10, 6), alpha=0.5, bins=30)
+        self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha=0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
 

@@ -43,6 +43,7 @@ class Momentum_Backtester(object):
         self.data_source = data_src
         self.get_data()
         self.results = None
+        self.toplot_hist = ['returns']
 
     def get_data(self):
 
@@ -82,6 +83,9 @@ class Momentum_Backtester(object):
         asset['position'] = np.sign(asset['returns'].rolling(momentum).mean())
         asset['strategy'] = asset['position'].shift(1) * asset['returns']
 
+        asset['lstrategy'] = asset['strategy'] * self.lvrage
+        self.toplot_hist.append('lstrategy')
+
         ## determinate when a trade takes places (long or short)
         trades = asset['position'].diff().fillna(0) != 0
 
@@ -90,11 +94,13 @@ class Momentum_Backtester(object):
 
         ## Cumulative returns in Cash
         asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['cstrategy_c'] = self.amount * asset['lstrategy'].cumsum().apply(np.exp)
 
         ## Cumulative returns in percentage
         asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['cstrategy_p'] = asset['lstrategy'].cumsum().apply(np.exp)
 
         ## Max Cummulative returns in cash
         asset['cmreturns_c'] = asset['creturns_c'].cummax()
@@ -159,7 +165,7 @@ class Momentum_Backtester(object):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
         title = 'Histogram Returns - Momentum (%d) Backtesting - %s ' % (self.momentum,self.symbol)
-        self.results[['creturns_p','cstrategy_p']].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
+        self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
@@ -167,6 +173,6 @@ if __name__ == '__main__':
     mombt = Momentum_Backtester('AAPL', '2015-12-8', '2016-12-10', lvrage=10)
     print(mombt.run_strategy(momentum=120))
     print(mombt.plot_strategy())
-    # print(mombt.hist_returns())
+    print(mombt.hist_returns())
 
 

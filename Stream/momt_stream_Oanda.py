@@ -69,7 +69,7 @@ class MomentumStream(object):
         for msg_type, msg in response.parts():
             if msg_type == 'pricing.Price':
                 self.on_success(msg.time, msg.asks[0].price)
-            if self.ticks == 250:
+            if self.ticks == 255:
                 if self.position == 1:
                     self.create_order(-self.units)
                 elif self.position == -1:

@@ -13,8 +13,8 @@ config = ConfigParser()
 # Read the config
 config.read("../API_Connection_Oanda/pyalgo.cfg")
 
-class MRBT_Backtester(object):
 
+class Momentum_Backtester(object):
     ''' Momentum backtesting strategy:
     Attributes
     ==========
@@ -42,22 +42,26 @@ class MRBT_Backtester(object):
     plot_strategy:
         plots the performance of the strategy compared to the symbol
     '''
-    def __init__(self, symbol, start, end, amount = 10000, tc = 0.000, lvrage =1 , sufix = '.000000000Z', timeFrame = 'H4', price = 'A'):
 
+    def __init__(self, symbol, start, end, amount=10000, tc=0.000, lvrage=1, sufix='.000000000Z', timeFrame='H4',
+                 price='A'):
         '''
 
-        symbol:
-                SYmbol
+        :param symbol:
         :param start:
         :param end:
         :param amount:
         :param tc:
+        :param lvrage:
         :param sufix:
-        :param timeFrame:
+        :param timeFrame: http://developer.oanda.com/rest-live/rates/
         :param price:
         '''
 
-        self.symbol = symbol # EUR_USD
+
+
+
+        self.symbol = symbol  # EUR_USD
         # self.start = start
         # self.end = end
         self.amount = amount
@@ -66,8 +70,8 @@ class MRBT_Backtester(object):
         self.suffix = sufix
         self.timeFrame = timeFrame
         self.price = price
-        self.start = dt.datetime.combine(pd.to_datetime(start), dt.time(9,00))
-        self.end = dt.datetime.combine(pd.to_datetime(end), dt.time(16,00))
+        self.start = dt.datetime.combine(pd.to_datetime(start), dt.time(9, 00))
+        self.end = dt.datetime.combine(pd.to_datetime(end), dt.time(16, 00))
         # This string suffix is needed to conform to the Oanda API requirements regarding start and end times.
         self.fromTime = self.start.isoformat('T') + self.suffix
         self.toTime = self.end.isoformat('T') + self.suffix
@@ -76,7 +80,6 @@ class MRBT_Backtester(object):
         self.toplot_c = ['creturns_c']
         self.toplot_p = ['creturns_p']
         self.toplot_hist = ['returns']
-
 
         self.ctx = v20.Context(
             'api-fxpractice.oanda.com',
@@ -90,11 +93,11 @@ class MRBT_Backtester(object):
     def get_data(self):
 
         res = self.ctx.instrument.candles(
-            instrument= self.symbol,
-            fromTime= self.fromTime,
-            toTime= self.toTime,
-            granularity= self.timeFrame,
-            price= self.price)
+            instrument=self.symbol,
+            fromTime=self.fromTime,
+            toTime=self.toTime,
+            granularity=self.timeFrame,
+            price=self.price)
 
         # data.keys()
 
@@ -125,9 +128,16 @@ class MRBT_Backtester(object):
 
         data['returns'] = np.log(data['CloseAsk'] / data['CloseAsk'].shift(1))
 
+
+        # print(data)
         self.asset = data
 
-    def run_strategy(self, SMA, threshold_std):
+
+    def dataReturn(self):
+        return self.asset
+
+
+    def run_strategy(self, momentum=1, roll = 100, r = 0.0225):
 
         '''
         This function run a momentum backtest.
@@ -148,57 +158,55 @@ class MRBT_Backtester(object):
        '''
 
         asset = self.asset.copy()
-        self.SMA = SMA
-
-
+        self.momentum = momentum
         # self.str_rtrn = ['returns']
         # self.drawdown = []
-        #self.cumrent = []
+        # self.cumrent = []
 
-        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['meanRoll'] = asset['returns'].rolling(roll).mean() * 6 * 252
+        asset['stdRoll'] = asset['returns'].rolling(roll).std() * 6 * 252 ** 0.5
+        asset['KC'] = np.where( ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 < 1, 1, ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 )
+        asset['KC'].fillna(1,inplace =True)
+        # self.lvrage = asset['KC']
+
+
+        ## Position
+
+        asset['returns'] = asset['returns'] * self.lvrage
+        # asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        # asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
         asset['cmreturns_c'] = asset['creturns_c'].cummax()
         asset['cmreturns_p'] = asset['creturns_p'].cummax()
         asset['ddreturns_c'] = asset['cmreturns_c'] - asset['creturns_c']
         asset['ddreturns_p'] = asset['cmreturns_p'] - asset['creturns_p']
 
-        dicti = {'Mean Reverting Strategies': {}}
+        dicti = {'Momentum Strategies': {}}
         x = []
         y = []
         z = []
 
-        for i in SMA:
+        for i in momentum:
 
-            asset['sma_%i' %i] = asset['CloseAsk'].rolling(i).mean()
-            asset['distance_%i' %i] = asset['CloseAsk'] - asset['sma_%i' %i]
+            asset['position_%i' % i] = np.sign(asset['returns'].rolling(i).mean())
+            asset['strategy_%i' % i] = asset['position_%i' % i].shift(1) * asset['returns']
 
-            self.threshold = threshold_std * np.std(asset['distance_%i' %i])
-
-            ## Position
-            asset['position_%i' %i] = np.where(asset['distance_%i' %i] > self.threshold, -1, np.nan)
-            asset['position_%i' %i] = np.where(asset['distance_%i' %i] < -self.threshold, 1, asset['position_%i' %i])
-            asset['position_%i' %i] = np.where(asset['distance_%i' %i] * asset['distance_%i' %i].shift(1) < 0, 0, asset['position_%i' %i])
-            ## Fill al na for 0
-            asset['position_%i' %i] = asset['position_%i' %i].ffill().fillna(0)
-
-            asset['strategy_%i' %i] = asset['position_%i' %i].shift(1) * asset['returns']
-
-            ##
-            asset['lstrategy_%i' % i] = asset['strategy_%i' % i] * self.lvrage
+            asset['lstrategy_%i' % i] = asset['strategy_%i' % i] * asset['KC'] #self.lvrage
             self.toplot_hist.append('lstrategy_%i' % i)
 
             ## determinate when a trade takes places (long or short)
-            trades = asset['position_%i' %i].diff().fillna(0) != 0
+            trades = asset['position_%i' % i].diff().fillna(0) != 0
 
             ## subtracting transaction cost from return when trade takes place
-            asset['strategy_%i' %i][trades] -= self.tc
+            asset['strategy_%i' % i][trades] -= self.tc
 
             ## Cumulative returns in Cash
-            # asset['cstrategy_c_%i' %i] = self.amount * asset['strategy_%i' %i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+            # asset['cstrategy_c_%i' % i] = self.amount* asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
             asset['cstrategy_c_%i' % i] = self.amount * asset['lstrategy_%i' % i].cumsum().apply(np.exp)
 
             ## Cumulative returns in percentage
-            # asset['cstrategy_p_%i' %i] = asset['strategy_%i' %i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+            # asset['cstrategy_p_%i' % i] = asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
             asset['cstrategy_p_%i' % i] = asset['lstrategy_%i' % i].cumsum().apply(np.exp)
 
             ## Max Cummulative returns in cash
@@ -237,69 +245,51 @@ class MRBT_Backtester(object):
             ## Maximum Drawdown in Percentage
             mdd_p = self.results['ddstrategy_p_%i' %i].max()
 
-
-            keys = ['aperf_c_%i' %i, 'aperf_p_%i' %i, 'operf_c_%i' %i, 'operf_p_%i' %i, 'mdd_c_%i' %i, 'mdd_p_%i' %i]
+            keys = ['aperf_c_%i' %i , 'aperf_p_%i' %i, 'operf_c_%i' %i, 'operf_p_%i' %i, 'mdd_c_%i' %i, 'mdd_p_%i' %i]
             values = ['%.2f' % np.round(aperf_c, 2), '%.2f' % np.round(aperf_p, 2), '%.2f' % np.round(operf_c, 2),
                       '%.2f' % np.round(operf_p, 2), '%.2f' % np.round(mdd_c, 2), '%.2f' % np.round(mdd_p, 2)]
 
-            res = dict(zip(keys, values))
+            res = dict(zip(keys,values))
 
-            dicti['Mean Reverting Strategies']['strategy_%i' %i] = res
+            dicti['Momentum Strategies']['strategy_%i'%i] = res
 
             x.append(i)
             y.append(aperf_p)
             z.append(mdd_p)
 
-
-        self.x = x  # SMA
+        self.x = x  # momentums
         self.y = y  # final returns
         self.z = z  # mdd
 
-        # return np.round(aperf_c,2), round(aperf_p,2), round(operf_c,2), round(operf_p,3), mdd_c, mdd_p
-        return dicti
+        return  dicti
+        # return asset['KC']
 
     def plot_strategy(self):
 
-        #self.results = self.run_strategy()
+        # self.results = self.run_strategy()
 
         if self.results is None:
-
             print('No results to plot yet. Run a strategy.')
 
-        title = 'Mean Reverting Backtesting - %s \n %s ' % (self.symbol, self.timeFrame)
-        # self.results[self.toplot_c].plot(title=title, figsize=(10, 6)) #Cash
-        self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
+        title = 'Momentum Backtesting - %s \n %s ' % (self.symbol,self.timeFrame)
+        # self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
+        self.results[self.toplot_c].plot(title=title, figsize=(10, 6)) #Cash
         plt.show()
 
     def hist_returns(self):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'Histogram Returns - Mean Reverting Backtesting - %s \n %s ' % (self.symbol, self.timeFrame)
-        self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30) #in Cash
-        # self.results[self.toplot_p].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30) #in Percentage
+        title = 'Histogram Returns - Momentum Backtesting - %s \n %s' % (self.symbol,self.timeFrame)
+        self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha=0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
-    # def plot_mr(self):
-    #
-    #     if self.results is None:
-    #         print('No results to plot yet. Run a strategy.')
-    #
-    #     title = 'Mean Reverting (%i) Backtesting - %s ' % (self.SMA, self.symbol)
-    #     self.results[['distance']].plot(title=title, figsize=(10, 6))
-    #     plt.axhline(self.threshold, color='r')
-    #     plt.axhline(-self.threshold, color='r')
-    #     plt.axhline(0, color='r')
-    #     # self.results[['creturns_p', 'cstrategy_p']].plot(title=title, figsize=(10, 6))
-    #     plt.show()
-
-
-    def plot_bstmr(self):
+    def plot_bstmom(self):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'All Mean Reverting Strategies Final Returns - %s \n %s ' % (self.symbol, self.timeFrame)
+        title = 'All Momentum Strategies Final Returns - %s \n %s ' % (self.symbol,self.timeFrame)
 
         # fig, ax1 = plt.subplots()
         # ax1.plot(self.x,self.y, 'b-', alpha = 0.5)
@@ -316,15 +306,15 @@ class MRBT_Backtester(object):
         plt.plot(self.x, self.z, 'r--o', alpha = 0.5)
         plt.title(title)
         plt.legend(['Final Returns', 'Maximum Drawdown'])
-        plt.xlabel('Mean Reverting/SMA')
+        plt.xlabel('Momentums')
         plt.ylabel('Returns/MDD')
         plt.show()
 
 
 if __name__ == '__main__':
-    mrbt = MRBT_Backtester('AUD_JPY', '2015-12-8', '2016-12-10', lvrage=10)
-    print(mrbt.run_strategy(SMA=[x for x in range(0,220,20)],threshold_std= 1))
-    print(mrbt.plot_strategy())
-    # print(mrbt.plot_mr())
-    print(mrbt.hist_returns())
-    print(mrbt.plot_bstmr())
+    mombt = Momentum_Backtester('AUD_JPY', start='2015-12-08', end='2016-12-10', lvrage= 20) #EUR_USD
+    print(mombt.run_strategy(momentum=[x for x in range(0,220,20)]))
+    # print(mombt.dataReturn())
+    print(mombt.plot_strategy())
+    print(mombt.plot_bstmom())
+    print(mombt.hist_returns())

@@ -73,6 +73,7 @@ class MRBT_Backtester(object):
         self.toTime = self.end.isoformat('T') + self.suffix
         self.results = None
 
+        self.toplot_hist = ['returns']
 
         self.ctx = v20.Context(
             'api-fxpractice.oanda.com',
@@ -166,6 +167,9 @@ class MRBT_Backtester(object):
 
         asset['strategy'] = asset['position'].shift(1) * asset['returns']
 
+        asset['lstrategy'] = asset['strategy'] * self.lvrage
+        self.toplot_hist.append('lstrategy')
+
         ## determinate when a trade takes places (long or short)
         trades = asset['position'].diff().fillna(0) != 0
 
@@ -174,11 +178,13 @@ class MRBT_Backtester(object):
 
         ## Cumulative returns in Cash
         asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['cstrategy_c'] = self.amount * asset['lstrategy'].cumsum().apply(np.exp)
 
         ## Cumulative returns in percentage
         asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['cstrategy_p'] = asset['lstrategy'].cumsum().apply(np.exp)
 
         ## Max Cummulative returns in cash
         asset['cmreturns_c'] = asset['creturns_c'].cummax()
@@ -245,7 +251,7 @@ class MRBT_Backtester(object):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
         title = 'Histogram Returns - Mean Reverting (%i) Backtesting - %s \n %s' % (self.SMA, self.symbol, self.timeFrame)
-        self.results[['creturns_p','cstrategy_p']].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
+        self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
