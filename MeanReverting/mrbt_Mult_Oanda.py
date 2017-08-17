@@ -127,7 +127,7 @@ class MRBT_Backtester(object):
 
         self.asset = data
 
-    def run_strategy(self, SMA, threshold_std):
+    def run_strategy(self, SMA, threshold_std = 1):
 
         '''
         This function run a momentum backtest.
