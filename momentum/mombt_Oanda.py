@@ -164,17 +164,17 @@ class Momentum_Backtester(object):
         trades = asset['position'].diff().fillna(0) != 0
 
         ## subtracting transaction cost from return when trade takes place
-        asset['strategy'][trades] -= self.tc
+        asset['lstrategy'][trades] -= self.tc
 
         ## Cumulative returns in Cash
-        # asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
         asset['cstrategy_c'] = self.amount * asset['lstrategy'].cumsum().apply(np.exp)
-        asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # asset['cstrategy_c'] = self.amount * asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
 
         ## Cumulative returns in percentage
-        # asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
         asset['cstrategy_p'] = asset['lstrategy'].cumsum().apply(np.exp)
-        asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # asset['cstrategy_p'] = asset['strategy'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
 
         ## Max Cummulative returns in cash
         asset['cmreturns_c'] = asset['creturns_c'].cummax()

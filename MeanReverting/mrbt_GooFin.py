@@ -88,7 +88,7 @@ class MRBT_Backtester(object):
         trades = asset['position'].diff().fillna(0) != 0
 
         ## subtracting transaction cost from return when trade takes place
-        asset['strategy'][trades] -= self.tc
+        asset['lstrategy'][trades] -= self.tc
 
         ## Cumulative returns in Cash
         asset['creturns_c'] = self.amount * asset['returns'].apply(lambda x: x * self.lvrage).cumsum().apply(np.exp)

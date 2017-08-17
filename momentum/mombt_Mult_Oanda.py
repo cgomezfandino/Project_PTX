@@ -179,7 +179,7 @@ class Momentum_Backtester(object):
             trades = asset['position_%i' % i].diff().fillna(0) != 0
 
             ## subtracting transaction cost from return when trade takes place
-            asset['strategy_%i' % i][trades] -= self.tc
+            asset['lstrategy_%i' % i][trades] -= self.tc
 
             ## Cumulative returns in Cash
             # asset['cstrategy_c_%i' % i] = self.amount * asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
