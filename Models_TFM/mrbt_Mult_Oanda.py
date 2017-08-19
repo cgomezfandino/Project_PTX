@@ -156,12 +156,18 @@ class MRBT_Backtester(object):
         # self.drawdown = []
         #self.cumrent = []
 
-        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['cmreturns_c'] = asset['creturns_c'].cummax()
-        asset['cmreturns_p'] = asset['creturns_p'].cummax()
-        asset['ddreturns_c'] = asset['cmreturns_c'] - asset['creturns_c']
-        asset['ddreturns_p'] = asset['cmreturns_p'] - asset['creturns_p']
+
+        # Cumulative returns without laverage
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
+
+        # Cumulative returns with laverage
+        asset['lcreturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['lcreturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['lcmreturns_c'] = asset['lcreturns_c'].cummax()
+        asset['lcmreturns_p'] = asset['lcreturns_p'].cummax()
+        asset['ddreturns_c'] = asset['lcmreturns_c'] - asset['lcreturns_c']
+        asset['ddreturns_p'] = asset['lcmreturns_p'] - asset['lcreturns_p']
 
         dicti = {'Mean Reverting Strategies': {}}
         x = []
@@ -324,7 +330,7 @@ class MRBT_Backtester(object):
 
 
 if __name__ == '__main__':
-    mrbt = MRBT_Backtester('SPX500_USD', '2015-12-8', '2016-12-10', lvrage=10)
+    mrbt = MRBT_Backtester('EUR_USD', '2015-01-01', '2017-01-01', lvrage=10)
     print(mrbt.run_strategy(SMA=[x for x in range(20,220,20)],threshold_std= 1.5))
     mrbt.plot_strategy()
     # mrbt.plot_mr()

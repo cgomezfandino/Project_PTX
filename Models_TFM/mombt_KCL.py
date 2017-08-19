@@ -29,10 +29,8 @@ class Momentum_Backtester(object):
     tc: float
         proportional transaction costs (e.g. 0.3% = 0.003) per trade
     sufix: str
-
     timeFrame:
         Candle TimeFrame
-
     Methods
     =========
     get_data:
@@ -46,7 +44,6 @@ class Momentum_Backtester(object):
     def __init__(self, symbol, start, end, amount=10000, tc=0.000, sufix='.000000000Z', timeFrame='H4',
                  price='A'):
         '''
-
         :param symbol:
         :param start:
         :param end:
@@ -142,11 +139,9 @@ class Momentum_Backtester(object):
 
         '''
         This function run a momentum backtest.
-
         :param momentum:
         ================
         Number of lags you want to to test for momuntum strategy
-
         :return:
         ================
         The backtest returns the following values:
@@ -178,18 +173,22 @@ class Momentum_Backtester(object):
         # self.lvrage = asset['KC']
 
 
-        ## Position
 
+        # Cumulative returns without laverage
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
+
+        # Cumulative returns with laverage
         asset['lreturns'] = asset['returns'] * asset['KC'] #self.lvrage
         # asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_c'] = self.amount * asset['lreturns'].cumsum().apply(np.exp)
+        asset['lcreturns_c'] = self.amount * asset['lreturns'].cumsum().apply(np.exp)
 
         # asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_p'] = asset['lreturns'].cumsum().apply(np.exp)
-        asset['cmreturns_c'] = asset['creturns_c'].cummax()
-        asset['cmreturns_p'] = asset['creturns_p'].cummax()
-        asset['ddreturns_c'] = asset['cmreturns_c'] - asset['creturns_c']
-        asset['ddreturns_p'] = asset['cmreturns_p'] - asset['creturns_p']
+        asset['lcreturns_p'] = asset['lreturns'].cumsum().apply(np.exp)
+        asset['lcmreturns_c'] = asset['lcreturns_c'].cummax()
+        asset['lcmreturns_p'] = asset['lcreturns_p'].cummax()
+        asset['ddreturns_c'] = asset['lcmreturns_c'] - asset['lcreturns_c']
+        asset['ddreturns_p'] = asset['lcmreturns_p'] - asset['lcreturns_p']
 
         dicti = {'Momentum Strategies': {}}
         x = []

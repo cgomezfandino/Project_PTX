@@ -151,7 +151,7 @@ class MRBT_Backtester(object):
         asset = self.asset.copy()
         self.SMA = SMA
 
-
+        ## Kelly Criterion
         if halfKC is True:
             asset['meanRoll'] = asset['returns'].rolling(roll).mean() * 6 * 252
             asset['stdRoll'] = asset['returns'].rolling(roll).std() * 6 * 252 ** 0.5
@@ -168,20 +168,24 @@ class MRBT_Backtester(object):
         # self.drawdown = []
         #self.cumrent = []
 
+        # Cumulative returns without laverage
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
 
+        # Cumulative returns with laverage
         asset['lreturns'] = asset['returns'] * asset['KC']  # self.lvrage
         # In Cash
-        asset['creturns_c'] = self.amount * asset['lreturns'].cumsum().apply(np.exp)
+        asset['lcreturns_c'] = self.amount * asset['lreturns'].cumsum().apply(np.exp)
         # In Percentage
-        asset['creturns_p'] = asset['lreturns'].cumsum().apply(np.exp)
+        asset['lcreturns_p'] = asset['lreturns'].cumsum().apply(np.exp)
         # Cum Returns in cash
-        asset['cmreturns_c'] = asset['creturns_c'].cummax()
+        asset['lcmreturns_c'] = asset['lcreturns_c'].cummax()
         # Cum Returns in Percentage
-        asset['cmreturns_p'] = asset['creturns_p'].cummax()
+        asset['lcmreturns_p'] = asset['lcreturns_p'].cummax()
         # MDD in cash
-        asset['ddreturns_c'] = asset['cmreturns_c'] - asset['creturns_c']
-        # MDD in Percentage
-        asset['ddreturns_p'] = asset['cmreturns_p'] - asset['creturns_p']
+        asset['ddreturns_c'] = asset['lcmreturns_c'] - asset['lcreturns_c']
+        # MDD in Percentag
+        asset['ddreturns_p'] = asset['lcmreturns_p'] - asset['lcreturns_p']
 
         dicti = {'Mean Reverting Strategies': {}}
         x = []
@@ -341,8 +345,8 @@ class MRBT_Backtester(object):
 
 
 if __name__ == '__main__':
-    mrbt = MRBT_Backtester('SPX500_USD', '2015-12-8', '2016-12-10')
-    print(mrbt.run_strategy(SMA=[x for x in range(20,220,20)],threshold_std=1.5 ,halfKC=True))
+    mrbt = MRBT_Backtester('EUR_USD', '2015-01-01', '2017-01-01')
+    print(mrbt.run_strategy(SMA=[x for x in range(20,220,20)],threshold_std=1.5 , roll=100 ,halfKC=True))
     mrbt.plot_strategy()
     #mrbt.plot_mr()
     mrbt.plot_bstmr()

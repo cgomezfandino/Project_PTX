@@ -154,14 +154,18 @@ class Momentum_Backtester(object):
         # self.drawdown = []
         # self.cumrent = []
 
-        ## Position
 
-        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['cmreturns_c'] = asset['creturns_c'].cummax()
-        asset['cmreturns_p'] = asset['creturns_p'].cummax()
-        asset['ddreturns_c'] = asset['cmreturns_c'] - asset['creturns_c']
-        asset['ddreturns_p'] = asset['cmreturns_p'] - asset['creturns_p']
+        # Cumulative returns without laverage
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
+
+        # Cumulative returns with laverage
+        asset['lcreturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['lcreturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['lcmreturns_c'] = asset['lcreturns_c'].cummax()
+        asset['lcmreturns_p'] = asset['lcreturns_p'].cummax()
+        asset['ddreturns_c'] = asset['lcmreturns_c'] - asset['lcreturns_c']
+        asset['ddreturns_p'] = asset['lcmreturns_p'] - asset['lcreturns_p']
 
         dicti = {'Momentum Strategies': {}}
         x = []
@@ -242,7 +246,7 @@ class Momentum_Backtester(object):
         self.y = y  # final returns
         self.z = z  # mdd
 
-        return  dicti
+        return dicti
 
     def plot_strategy(self):
 
@@ -251,8 +255,8 @@ class Momentum_Backtester(object):
             print('No results to plot yet. Run a strategy.')
 
         title = 'Momentum Backtesting - %s \n %s ' % (self.symbol,self.timeFrame)
-        # self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
-        self.results[self.toplot_c].plot(title=title, figsize=(10, 6), color=self.colors) #Cash
+        self.results[self.toplot_p].plot(title=title, figsize=(10, 6), color=self.colors) #Percentage
+        # self.results[self.toplot_c].plot(title=title, figsize=(10, 6), color=self.colors) #Cash
         plt.show()
 
     def hist_returns(self):
@@ -291,7 +295,7 @@ class Momentum_Backtester(object):
 
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('SPX500_USD', start='2015-12-08', end='2016-12-10', lvrage=10) #EUR_USD, AUD_JPY
+    mombt = Momentum_Backtester('EUR_USD', start='2015-01-01', end='2017-01-01', lvrage=10) #EUR_USD, AUD_JPY
     print(mombt.run_strategy(momentum=[x for x in range(20,220,20)]))
     mombt.plot_strategy()
     mombt.plot_bstmom()
