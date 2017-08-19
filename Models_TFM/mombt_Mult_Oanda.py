@@ -6,7 +6,7 @@ from configparser import ConfigParser
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn
+import seaborn as sns
 
 # Create an object config
 config = ConfigParser()
@@ -43,30 +43,27 @@ class Momentum_Backtester(object):
         plots the performance of the strategy compared to the symbol
     '''
 
-    def __init__(self, symbol, start, end, amount=10000, tc=0.000, sufix='.000000000Z', timeFrame='H4',
+    def __init__(self, symbol, start, end, amount=10000, tc=0.000, lvrage=1, sufix='.000000000Z', timeFrame='H4',
                  price='A'):
-        '''
 
-        :param symbol:
+        '''
+        symbol:
+                SYmbol
         :param start:
         :param end:
         :param amount:
         :param tc:
-        :param lvrage:
         :param sufix:
-        :param timeFrame: http://developer.oanda.com/rest-live/rates/
+        :param timeFrame:
         :param price:
         '''
-
-
-
 
         self.symbol = symbol  # EUR_USD
         # self.start = start
         # self.end = end
         self.amount = amount
         self.tc = tc
-        # self.lvrage = 1
+        self.lvrage = lvrage
         self.suffix = sufix
         self.timeFrame = timeFrame
         self.price = price
@@ -76,6 +73,7 @@ class Momentum_Backtester(object):
         self.fromTime = self.start.isoformat('T') + self.suffix
         self.toTime = self.end.isoformat('T') + self.suffix
         self.results = None
+        self.colors = sns.hls_palette(14)
 
         self.toplot_c = ['creturns_c']
         self.toplot_p = ['creturns_p']
@@ -128,16 +126,9 @@ class Momentum_Backtester(object):
 
         data['returns'] = np.log(data['CloseAsk'] / data['CloseAsk'].shift(1))
 
-
-        # print(data)
         self.asset = data
 
-
-    def dataReturn(self):
-        return self.asset
-
-
-    def run_strategy(self, momentum=1, roll = 100, r = 0.0225, halfKC = True):
+    def run_strategy(self, momentum=1):
 
         '''
         This function run a momentum backtest.
@@ -163,28 +154,10 @@ class Momentum_Backtester(object):
         # self.drawdown = []
         # self.cumrent = []
 
-        if halfKC is True:
-            asset['meanRoll'] = asset['returns'].rolling(roll).mean() * 6 * 252
-            asset['stdRoll'] = asset['returns'].rolling(roll).std() * 6 * 252 ** 0.5
-            asset['KC'] = np.where( ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 < 1, 1, ((asset['meanRoll'] - r) / asset['stdRoll']**2)/2 )
-            asset['KC'].fillna(1,inplace =True)
-        else:
-            asset['meanRoll'] = asset['returns'].rolling(roll).mean() * 6 * 252
-            asset['stdRoll'] = asset['returns'].rolling(roll).std() * 6 * 252 ** 0.5
-            asset['KC'] = np.where( ((asset['meanRoll'] - r) / asset['stdRoll']**2) < 1, 1, ((asset['meanRoll'] - r) / asset['stdRoll']**2) )
-            asset['KC'].fillna(1,inplace =True)
-
-        # self.lvrage = asset['KC']
-
-
         ## Position
 
-        asset['lreturns'] = asset['returns'] * asset['KC'] #self.lvrage
-        # asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_c'] = self.amount * asset['lreturns'].cumsum().apply(np.exp)
-
-        # asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
-        asset['creturns_p'] = asset['lreturns'].cumsum().apply(np.exp)
+        asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
         asset['cmreturns_c'] = asset['creturns_c'].cummax()
         asset['cmreturns_p'] = asset['creturns_p'].cummax()
         asset['ddreturns_c'] = asset['cmreturns_c'] - asset['creturns_c']
@@ -197,12 +170,10 @@ class Momentum_Backtester(object):
 
         for i in momentum:
 
-            # Getting the strategy
             asset['position_%i' % i] = np.sign(asset['returns'].rolling(i).mean())
             asset['strategy_%i' % i] = asset['position_%i' % i].shift(1) * asset['returns']
 
-            # Applying the laverage
-            asset['lstrategy_%i' % i] = asset['strategy_%i' % i] * asset['KC'] #self.lvrage
+            asset['lstrategy_%i' % i] = asset['strategy_%i' % i] * self.lvrage
             self.toplot_hist.append('lstrategy_%i' % i)
 
             ## determinate when a trade takes places (long or short)
@@ -212,7 +183,7 @@ class Momentum_Backtester(object):
             asset['lstrategy_%i' % i][trades] -= self.tc
 
             ## Cumulative returns in Cash
-            # asset['cstrategy_c_%i' % i] = self.amount* asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+            # asset['cstrategy_c_%i' % i] = self.amount * asset['strategy_%i' % i].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
             asset['cstrategy_c_%i' % i] = self.amount * asset['lstrategy_%i' % i].cumsum().apply(np.exp)
 
             ## Cumulative returns in percentage
@@ -272,26 +243,24 @@ class Momentum_Backtester(object):
         self.z = z  # mdd
 
         return  dicti
-        # return asset['KC']
 
     def plot_strategy(self):
 
         # self.results = self.run_strategy()
-
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
 
-        title = 'Momentum Backtesting - %s \n %s (Kelly Criterion)' % (self.symbol,self.timeFrame)
+        title = 'Momentum Backtesting - %s \n %s ' % (self.symbol,self.timeFrame)
         # self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
-        self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Cash
+        self.results[self.toplot_c].plot(title=title, figsize=(10, 6), color=self.colors) #Cash
         plt.show()
 
     def hist_returns(self):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'Histogram Returns - Momentum Backtesting - %s \n %s (Kelly Criterion)' % (self.symbol,self.timeFrame)
-        self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha=0.5, bins=30)
+        title = 'Histogram Returns - Momentum Backtesting - %s \n %s' % (self.symbol,self.timeFrame)
+        self.results[self.toplot_hist].plot.hist(title=title, color=self.colors, figsize=(10, 6), alpha=0.5, bins=30)
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
@@ -299,7 +268,7 @@ class Momentum_Backtester(object):
 
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
-        title = 'All Momentum Strategies Final Returns - %s \n %s (Kelly Criterion)' % (self.symbol,self.timeFrame)
+        title = 'All Momentum Strategies Final Returns - %s \n %s ' % (self.symbol,self.timeFrame)
 
         # fig, ax1 = plt.subplots()
         # ax1.plot(self.x,self.y, 'b-', alpha = 0.5)
@@ -322,9 +291,8 @@ class Momentum_Backtester(object):
 
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('EUR_USD', start='2017-01-01', end='2017-07-31') #EUR_USD, AUD_JPY
-    print(mombt.run_strategy(momentum=[x for x in range(0,220,20)], halfKC=True)) # True: half KellyCreiterion, False: KellyCrieterion
-    # print(mombt.dataReturn())
-    print(mombt.plot_strategy())
-    print(mombt.plot_bstmom())
-    print(mombt.hist_returns())
+    mombt = Momentum_Backtester('SPX500_USD', start='2015-12-08', end='2016-12-10', lvrage=10) #EUR_USD, AUD_JPY
+    print(mombt.run_strategy(momentum=[x for x in range(20,220,20)]))
+    mombt.plot_strategy()
+    mombt.plot_bstmom()
+    mombt.hist_returns()

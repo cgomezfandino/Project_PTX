@@ -6,7 +6,7 @@ from configparser import ConfigParser
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn
+import seaborn as sns
 
 # Create an object config
 config = ConfigParser()
@@ -72,6 +72,7 @@ class MRBT_Backtester(object):
         self.fromTime = self.start.isoformat('T') + self.suffix
         self.toTime = self.end.isoformat('T') + self.suffix
         self.results = None
+        self.colors = sns.hls_palette(14)
 
         self.toplot_c = ['creturns_c']
         self.toplot_p = ['creturns_p']
@@ -281,14 +282,12 @@ class MRBT_Backtester(object):
     def plot_strategy(self):
 
         #self.results = self.run_strategy()
-
         if self.results is None:
-
             print('No results to plot yet. Run a strategy.')
 
         title = 'Mean Reverting Backtesting - %s \n %s ' % (self.symbol, self.timeFrame)
         # self.results[self.toplot_c].plot(title=title, figsize=(10, 6)) #Cash
-        self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
+        self.results[self.toplot_p].plot(title=title, figsize=(10, 6), color= self.colors) #Percentage
         plt.show()
 
     def hist_returns(self):
@@ -296,7 +295,7 @@ class MRBT_Backtester(object):
         if self.results is None:
             print('No results to plot yet. Run a strategy.')
         title = 'Histogram Returns - Mean Reverting Backtesting - %s \n %s ' % (self.symbol, self.timeFrame)
-        self.results[self.toplot_hist].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30) #in Cash
+        self.results[self.toplot_hist].plot.hist(title=title, color=self.colors, figsize=(10, 6), alpha = 0.5, bins=30) #in Cash
         # self.results[self.toplot_p].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30) #in Percentage
         # plt.hist(self.results['creturns_p'])
         plt.show()
@@ -342,9 +341,9 @@ class MRBT_Backtester(object):
 
 
 if __name__ == '__main__':
-    mrbt = MRBT_Backtester('EUR_USD', '2015-12-8', '2016-12-10')
-    print(mrbt.run_strategy(SMA=[x for x in range(0,220,20)],threshold_std=1 ,halfKC=False))
-    print(mrbt.plot_strategy())
-    # print(mrbt.plot_mr())
-    print(mrbt.hist_returns())
-    print(mrbt.plot_bstmr())
+    mrbt = MRBT_Backtester('SPX500_USD', '2015-12-8', '2016-12-10')
+    print(mrbt.run_strategy(SMA=[x for x in range(20,220,20)],threshold_std=1.5 ,halfKC=True))
+    mrbt.plot_strategy()
+    #mrbt.plot_mr()
+    mrbt.plot_bstmr()
+    mrbt.hist_returns()
