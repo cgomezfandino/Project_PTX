@@ -169,7 +169,9 @@ class MRBT_Backtester(object):
         #self.cumrent = []
 
         # Cumulative returns without laverage
+        # In Cash
         asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        # In Percentage
         asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
 
         # Cumulative returns with laverage

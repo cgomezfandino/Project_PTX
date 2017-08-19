@@ -162,11 +162,17 @@ class MRBT_Backtester(object):
         asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
 
         # Cumulative returns with laverage
+        # In Cash
         asset['lcreturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # In Percentage
         asset['lcreturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # Cum Returns in cash
         asset['lcmreturns_c'] = asset['lcreturns_c'].cummax()
+        # Cum Returns in Percentage
         asset['lcmreturns_p'] = asset['lcreturns_p'].cummax()
+        # MDD in cash
         asset['ddreturns_c'] = asset['lcmreturns_c'] - asset['lcreturns_c']
+        # MDD in Percentage
         asset['ddreturns_p'] = asset['lcmreturns_p'] - asset['lcreturns_p']
 
         dicti = {'Mean Reverting Strategies': {}}

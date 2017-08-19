@@ -175,19 +175,24 @@ class Momentum_Backtester(object):
 
 
         # Cumulative returns without laverage
+        # In Cash
         asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(np.exp)
+        # In Percentage
         asset['creturns_p'] = asset['returns'].cumsum().apply(np.exp)
 
         # Cumulative returns with laverage
-        asset['lreturns'] = asset['returns'] * asset['KC'] #self.lvrage
-        # asset['creturns_c'] = self.amount * asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        asset['lreturns'] = asset['returns'] * asset['KC']  # self.lvrage
+        # In Cash
         asset['lcreturns_c'] = self.amount * asset['lreturns'].cumsum().apply(np.exp)
-
-        # asset['creturns_p'] = asset['returns'].cumsum().apply(lambda x: x * self.lvrage).apply(np.exp)
+        # In Percentage
         asset['lcreturns_p'] = asset['lreturns'].cumsum().apply(np.exp)
+        # Cum Returns in cash
         asset['lcmreturns_c'] = asset['lcreturns_c'].cummax()
+        # Cum Returns in Percentage
         asset['lcmreturns_p'] = asset['lcreturns_p'].cummax()
+        # MDD in cash
         asset['ddreturns_c'] = asset['lcmreturns_c'] - asset['lcreturns_c']
+        # MDD in Percentag
         asset['ddreturns_p'] = asset['lcmreturns_p'] - asset['lcreturns_p']
 
         dicti = {'Momentum Strategies': {}}
