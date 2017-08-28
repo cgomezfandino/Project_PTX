@@ -283,6 +283,7 @@ class MRBT_Backtester(object):
         title = 'Mean Reverting Backtesting - %s \n %s ' % (self.symbol, self.timeFrame)
         # self.results[self.toplot_c].plot(title=title, figsize=(10, 6)) #Cash
         self.results[self.toplot_p].plot(title=title, figsize=(10, 6), color= self.colors) #Percentage
+        plt.ylabel('Rentabilidad %')
         plt.show()
 
     def hist_returns(self):

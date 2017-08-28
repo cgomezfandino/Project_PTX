@@ -303,6 +303,7 @@ class MRBT_Backtester(object):
         title = 'Histogram Returns - Mean Reverting Backtesting - %s \n %s ' % (self.symbol, self.timeFrame)
         self.results[self.toplot_hist].plot.hist(title=title, color=self.colors, figsize=(10, 6), alpha = 0.5, bins=30) #in Cash
         # self.results[self.toplot_p].plot.hist(title=title, figsize=(10, 6), alpha = 0.5, bins=30) #in Percentage
+        plt.ylabel('Rentabilidad %')
         # plt.hist(self.results['creturns_p'])
         plt.show()
 
@@ -345,11 +346,21 @@ class MRBT_Backtester(object):
         plt.ylabel('Returns/MDD')
         plt.show()
 
+    def plot_series(self):
+
+        title = '%s - %s' %(self.symbol,self.timeFrame)
+        plt.plot(self.asset['CloseAsk'])
+        plt.xlabel('Date')
+        plt.ylabel('Price')
+        plt.title(title)
+        plt.show()
 
 if __name__ == '__main__':
     mrbt = MRBT_Backtester('EUR_USD', '2015-01-01', '2017-01-01')
     print(mrbt.run_strategy(SMA=[x for x in range(20,220,20)],threshold_std=1.5 , roll=100 ,halfKC=True))
     mrbt.plot_strategy()
     #mrbt.plot_mr()
+
     mrbt.plot_bstmr()
     mrbt.hist_returns()
+    # mrbt.plot_series()

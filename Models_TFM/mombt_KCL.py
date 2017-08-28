@@ -289,7 +289,8 @@ class Momentum_Backtester(object):
 
         title = 'Momentum Backtesting - %s \n %s (Kelly Criterion)' % (self.symbol,self.timeFrame)
         # self.results[self.toplot_p].plot(title=title, figsize=(10, 6)) #Percentage
-        self.results[self.toplot_p].plot(title=title, figsize=(10, 6), color=self.colors); #Cash
+        self.results[self.toplot_p].plot(title=title, figsize=(10, 6), color=self.colors); #Percentage
+        plt.ylabel('Rentabilidad %')
         plt.show();
 
     def hist_returns(self):
@@ -328,7 +329,7 @@ class Momentum_Backtester(object):
 
 
 if __name__ == '__main__':
-    mombt = Momentum_Backtester('SPX500_USD', start='2017-01-01', end='2017-07-31') #EUR_USD, AUD_JPY
+    mombt = Momentum_Backtester('EUR_USD', start='2015-01-01', end='2017-01-01') #EUR_USD, AUD_JPY
     print(mombt.run_strategy(momentum=[x for x in range(20,220,20)], halfKC=True)) # True: half KellyCreiterion, False: KellyCrieterion
     # print(mombt.dataReturn())
     mombt.plot_strategy()

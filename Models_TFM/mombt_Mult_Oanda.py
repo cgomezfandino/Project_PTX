@@ -263,6 +263,7 @@ class Momentum_Backtester(object):
         title = 'Momentum Backtesting - %s \n %s ' % (self.symbol,self.timeFrame)
         self.results[self.toplot_p].plot(title=title, figsize=(10, 6), color=self.colors) #Percentage
         # self.results[self.toplot_c].plot(title=title, figsize=(10, 6), color=self.colors) #Cash
+        plt.ylabel('Rentabilidad %')
         plt.show()
 
     def hist_returns(self):
